@@ -1,8 +1,10 @@
 import { motion } from "framer-motion";
-import { useState } from "react";
-import { useCart } from '../context/CartContext';
+import { useState, useEffect } from "react";
+import { useCart } from "../context/CartContext";
+import axios from "axios";
 
-// Sample Data with Thumbnails
+
+// ✅ Sample hardcoded courses
 const sampleCourses = [
   { id: 1, title: "Web Dev Bootcamp", price: 1499, category: "Web", thumbnail: "https://i.pinimg.com/736x/8e/df/d7/8edfd7e930e5b99c7e26673c5ad5813b.jpg" },
   { id: 2, title: "AWS for Beginners", price: 999, category: "Cloud", thumbnail: "https://i.pinimg.com/736x/fe/2c/c4/fe2cc43a8f535f6e4f951618b9c566e9.jpg" },
@@ -34,20 +36,43 @@ const sampleCourses = [
 ];
 
 export default function Courses() {
-  const { cart, addToCart } = useCart(); // ✅ Use global cart context
+  const { addToCart } = useCart();
+
+  const [backendCourses, setBackendCourses] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+
   const [selectedCategory, setSelectedCategory] = useState("All");
   const [priceFilter, setPriceFilter] = useState("All");
   const [searchQuery, setSearchQuery] = useState("");
 
-  const filteredCourses = sampleCourses.filter((course) => {
+  useEffect(() => {
+    const fetchCourses = async () => {
+      try {
+        const res = await axios.get("/api/courses");
+        setBackendCourses(res.data);
+        setLoading(false);
+      } catch (err) {
+        setError("Failed to fetch courses");
+        setLoading(false);
+      }
+    };
+    fetchCourses();
+  }, []);
+
+  const allCourses = [...sampleCourses, ...backendCourses];
+  if (!backendCourses || backendCourses.length === 0) {
+    return <p className="text-center mt-10 text-gray-600">No courses available.</p>;
+  }
+
+  const filteredCourses = allCourses.filter((course) => {
     const categoryMatch = selectedCategory === "All" || course.category === selectedCategory;
     const priceMatch =
       priceFilter === "All" ||
       (priceFilter === "Below 1000" && course.price < 1000) ||
       (priceFilter === "1000-1500" && course.price >= 1000 && course.price <= 1500) ||
       (priceFilter === "Above 1500" && course.price > 1500);
-    const searchMatch = course.title.toLowerCase().includes(searchQuery.toLowerCase());
-
+    const searchMatch = course.title?.toLowerCase().includes(searchQuery.toLowerCase());
     return categoryMatch && priceMatch && searchMatch;
   });
 
@@ -115,14 +140,19 @@ export default function Courses() {
 
       {/* 🎓 Course Cards */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-7xl mx-auto">
-        {filteredCourses.length > 0 ? (
+        {loading && backendCourses.length === 0 ? (
+          <p className="text-center text-gray-500 col-span-3">Loading courses...</p>
+        ) : error ? (
+          <p className="text-center text-red-500 col-span-3">{error}</p>
+        ) : filteredCourses.length > 0 ? (
           filteredCourses.map((course) => (
             <motion.div
-              key={course.id}
-              className="bg-white rounded-xl shadow-lg overflow-hidden hover:scale-[1.02] transition-all border border-gray-200"
+              key={course._id || course.id}
+              className="bg-white rounded-xl shadow-lg overflow-hidden transition-all border border-gray-200"
               initial={{ opacity: 0, y: 30 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.4 }}
+              whileHover={{ scale: 1.05 }}
+              transition={{ duration: 0.3 }}
             >
               <img
                 src={course.thumbnail}
@@ -130,13 +160,9 @@ export default function Courses() {
                 className="w-full h-48 object-cover"
               />
               <div className="p-4">
-                <h3 className="text-lg font-bold text-indigo-700">
-                  {course.title}
-                </h3>
+                <h3 className="text-lg font-bold text-indigo-700">{course.title}</h3>
                 <p className="text-gray-600">₹{course.price}</p>
-                <p className="text-xs text-gray-400 mb-3">
-                  Category: {course.category}
-                </p>
+                <p className="text-xs text-gray-400 mb-3">Category: {course.category}</p>
                 <button
                   onClick={() => addToCart(course)}
                   className="mt-2 px-4 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 transition"
@@ -147,9 +173,7 @@ export default function Courses() {
             </motion.div>
           ))
         ) : (
-          <p className="text-center text-gray-500 col-span-3">
-            No courses match your filter.
-          </p>
+          <p className="text-center text-gray-500 col-span-3">No courses match your filter.</p>
         )}
       </div>
     </div>

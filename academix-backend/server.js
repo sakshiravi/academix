@@ -16,8 +16,9 @@ mongoose.connect(process.env.MONGO_URI)
   .then(() => console.log("✅ MongoDB Connected"))
   .catch((err) => console.error("❌ MongoDB connection error:", err));
 
-// Routes
-app.use("/api/courses", require("./routes/courseRoutes")); // ✅ Use your actual route file
+// ✅ Routes
+app.use("/api/courses", require("./routes/courseRoutes")); 
+app.use("/api/orders", require("./routes/orderRoutes")); // ✅ ADDED THIS LINE
 
 // Start server on PORT from .env or fallback to 5000
 const PORT = process.env.PORT || 5000;

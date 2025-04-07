@@ -1,12 +1,22 @@
 import React from 'react';
-import { useCart } from '../context/CartContext'; // 👈 Make sure context is set up
+import { useCart } from '../context/CartContext';
 import { FaTrash } from 'react-icons/fa';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 
 const Cart = () => {
   const { cartItems, removeFromCart } = useCart();
+  const navigate = useNavigate();
 
   const totalPrice = cartItems.reduce((acc, item) => acc + item.price, 0);
+
+  const handleProceedToCheckout = () => {
+    navigate("/checkout", {
+      state: {
+        selectedCourses: cartItems,
+        totalPrice: totalPrice,
+      }
+    });
+  };
 
   return (
     <div className="min-h-screen bg-white px-6 py-12">
@@ -36,7 +46,11 @@ const Cart = () => {
 
           <div className="flex justify-between items-center mt-8 border-t pt-6">
             <h4 className="text-2xl font-bold text-indigo-700">Total: ₹{totalPrice}</h4>
-            <button className="bg-indigo-600 text-white px-6 py-2 rounded-lg hover:bg-indigo-700 transition">
+            
+            <button
+              onClick={handleProceedToCheckout}
+              className="mt-4 bg-indigo-600 text-white px-4 py-2 rounded-md hover:bg-indigo-700"
+            >
               Proceed to Checkout
             </button>
           </div>
